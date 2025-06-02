@@ -43,24 +43,12 @@ export function speakJapanese(text: string): void {
 // 使用自定义TTS API朗读日语文本
 export async function playJapaneseTTS(text: string): Promise<void> {
   try {
-    const response = await fetch('/api/tts', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ text }),
-    });
+    // 使用客户端直接调用而不是通过服务端API
+    const voiceData = await generateSpeechClientSide(text);
     
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || '朗读请求失败');
-    }
-    
-    const { audioData } = await response.json();
-    
-    if (audioData) {
+    if (voiceData) {
       // 创建Audio元素并播放
-      const audio = new Audio(`data:audio/wav;base64,${audioData}`);
+      const audio = new Audio(`data:audio/wav;base64,${voiceData}`);
       await audio.play();
     } else {
       throw new Error('未获取到音频数据');
@@ -69,6 +57,48 @@ export async function playJapaneseTTS(text: string): Promise<void> {
     console.error('TTS播放错误:', error);
     // 如果TTS API失败，回退到浏览器内置TTS（仅作为后备）
     speakJapanese(text);
+  }
+}
+
+// 客户端直接调用speechactors.com
+async function generateSpeechClientSide(text: string, locale: string = "ja-JP", voice: string = "ja-JP-NanamiNeural", style: string = "default"): Promise<string> {
+  try {
+    // 首先访问主页获取必要的cookie
+    await fetch("https://speechactors.com/", {
+      method: "GET",
+      credentials: "include",
+      mode: "cors"
+    });
+    
+    // 准备表单数据
+    const formData = new FormData();
+    formData.append('locale', locale);
+    formData.append('text', text);
+    formData.append('voice', voice);
+    formData.append('style', style);
+    
+    // 发送请求生成语音
+    const response = await fetch("https://speechactors.com/open-tool/generate", {
+      method: "POST",
+      credentials: "include",
+      mode: "cors",
+      body: formData
+    });
+    
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (result.status === "success") {
+      return result.stream;
+    } else {
+      throw new Error("Failed to generate speech");
+    }
+  } catch (error) {
+    console.error("Client-side TTS error:", error);
+    throw error;
   }
 }
 
