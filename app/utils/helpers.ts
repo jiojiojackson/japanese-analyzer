@@ -40,80 +40,39 @@ export function speakJapanese(text: string): void {
   }
 }
 
-// 使用自定义TTS API朗读日语文本 (类似Python脚本实现)
+// 使用自定义TTS API朗读日语文本
 export async function playJapaneseTTS(text: string): Promise<void> {
   try {
-    // 模拟Python脚本的浏览器行为
     console.log("正在生成语音...");
     
-    // Step 1: 获取主页面的cookies
-    const mainResponse = await fetch("https://speechactors.com/", {
-      method: "GET",
-      credentials: "include",
-      mode: "cors",
-      headers: {
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'Cache-Control': 'no-cache',
-        'DNT': '1',
-        'Pragma': 'no-cache',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'none',
-        'Sec-Fetch-User': '?1',
-        'Upgrade-Insecure-Requests': '1',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'
-      }
-    });
-
-    if (!mainResponse.ok) {
-      throw new Error(`访问主页失败: ${mainResponse.status}`);
-    }
-
-    // Step 2: 准备表单数据
-    const formData = new FormData();
-    formData.append('locale', 'ja-JP');
-    formData.append('text', text);
-    formData.append('voice', 'ja-JP-NanamiNeural');
-    formData.append('style', 'default');
-
-    // Step 3: 发送语音合成请求
-    const response = await fetch("https://speechactors.com/open-tool/generate", {
+    // 使用服务端代理API避免CORS问题
+    const response = await fetch('/api/tts', {
       method: 'POST',
-      credentials: 'include',
-      mode: 'cors',
       headers: {
-        'Accept': '*/*',
-        'Accept-Language': 'en-US,en;q=0.9',
-        'DNT': '1',
-        'Origin': 'https://speechactors.com',
-        'Referer': 'https://speechactors.com/',
-        'Sec-Fetch-Dest': 'empty',
-        'Sec-Fetch-Mode': 'cors',
-        'Sec-Fetch-Site': 'same-origin',
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'X-Requested-With': 'XMLHttpRequest'
+        'Content-Type': 'application/json',
       },
-      body: formData
+      body: JSON.stringify({ text }),
     });
-
+    
     if (!response.ok) {
-      throw new Error(`生成语音请求失败: ${response.status}`);
+      const errorData = await response.json();
+      throw new Error(errorData.error || `服务器错误: ${response.status}`);
     }
-
-    // 解析响应
-    const result = await response.json();
-
-    if (result.status === "success") {
+    
+    const { audioData } = await response.json();
+    
+    if (audioData) {
       // 创建Audio元素并播放
-      const audio = new Audio(`data:audio/wav;base64,${result.stream}`);
+      const audio = new Audio(`data:audio/wav;base64,${audioData}`);
       await audio.play();
+      console.log("语音播放成功");
     } else {
-      throw new Error(`生成语音失败: ${JSON.stringify(result)}`);
+      throw new Error('未获取到音频数据');
     }
   } catch (error) {
     console.error('TTS播放错误:', error);
     // 如果TTS API失败，回退到浏览器内置TTS（仅作为后备）
+    console.log("使用浏览器内置TTS作为后备...");
     speakJapanese(text);
   }
 }
