@@ -75,7 +75,7 @@ export async function playJapaneseTTS(text: string): Promise<void> {
 // 默认API URL
 const DEFAULT_API_URL = 
   // Avoid using process.env directly
-  (typeof window !== 'undefined' && (window as any).env?.API_URL) || 
+  (typeof window !== 'undefined' && (window as Window & { env?: { API_URL?: string } }).env?.API_URL) || 
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 // 保存API设置到localStorage
