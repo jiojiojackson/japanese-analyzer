@@ -661,3 +661,18 @@ html.safari #japaneseInput {
     line-height: 26px;
   }
 }
+
+/* 朗读按钮样式 */
+.read-button {
+  transition: all 0.3s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.read-button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+}
+
+.read-button:disabled {
+  cursor: not-allowed;
+}

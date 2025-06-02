@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { containsKanji, getPosClass, posChineseMap, speakJapanese } from '../utils/helpers';
+import { containsKanji, getPosClass, posChineseMap, speakJapanese, playJapaneseTTS } from '../utils/helpers';
 import { getWordDetails, WordDetail } from '../services/api';
 
 interface TokenData {
@@ -29,6 +29,7 @@ export default function AnalysisResult({
   const [isLoading, setIsLoading] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
 
   // 检测设备是否为移动端
   useEffect(() => {
@@ -195,6 +196,24 @@ export default function AnalysisResult({
   return (
     <div className="premium-card">
       <h2 className="text-2xl font-semibold text-gray-700 mb-4">解析结果</h2>
+      <div className="flex items-center mb-2 gap-2">
+        <button
+          className={`read-button flex items-center gap-1 px-3 py-1 rounded-md ${isPlaying ? 'bg-gray-400 text-gray-100' : 'bg-blue-500 text-white hover:bg-blue-600'}`}
+          onClick={async () => {
+            setIsPlaying(true);
+            try {
+              await playJapaneseTTS(originalSentence);
+            } finally {
+              setIsPlaying(false);
+            }
+          }}
+          disabled={isPlaying}
+          title="朗读句子"
+        >
+          <i className="fas fa-volume-up"></i>
+          {isPlaying ? '朗读中...' : '朗读句子'}
+        </button>
+      </div>
       <div id="analyzedSentenceOutput" className="text-gray-800 mb-2 p-3 bg-gray-50 rounded-lg min-h-[70px]">
         {tokens.map((token, index) => (
           <span key={index} className="word-unit-wrapper tooltip">

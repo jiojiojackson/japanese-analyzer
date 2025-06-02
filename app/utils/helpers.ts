@@ -40,9 +40,42 @@ export function speakJapanese(text: string): void {
   }
 }
 
+// 使用自定义TTS API朗读日语文本
+export async function playJapaneseTTS(text: string): Promise<void> {
+  try {
+    const response = await fetch('/api/tts', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ text }),
+    });
+    
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || '朗读请求失败');
+    }
+    
+    const { audioData } = await response.json();
+    
+    if (audioData) {
+      // 创建Audio元素并播放
+      const audio = new Audio(`data:audio/wav;base64,${audioData}`);
+      await audio.play();
+    } else {
+      throw new Error('未获取到音频数据');
+    }
+  } catch (error) {
+    console.error('TTS播放错误:', error);
+    // 如果TTS API失败，回退到浏览器内置TTS（仅作为后备）
+    speakJapanese(text);
+  }
+}
+
 // 默认API URL
 const DEFAULT_API_URL = 
-  process.env.API_URL || 
+  // Avoid using process.env directly
+  (typeof window !== 'undefined' && (window as any).env?.API_URL) || 
   "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions";
 
 // 保存API设置到localStorage
@@ -69,14 +102,14 @@ export function getApiSettings(): { apiKey: string, apiUrl: string } {
     const savedApiKey = localStorage.getItem('userGeminiApiKey') || '';
     const savedApiUrl = localStorage.getItem('userGeminiApiUrl') || DEFAULT_API_URL;
     
-    // 尝试从环境变量读取默认值（如果本地没有值）
-    const apiKey = savedApiKey || process.env.API_KEY || '';
+    // 使用默认值或本地存储值
+    const apiKey = savedApiKey || '';
     const apiUrl = savedApiUrl;
     
     return { apiKey, apiUrl };
   }
   return { 
-    apiKey: process.env.API_KEY || '', 
+    apiKey: '', 
     apiUrl: DEFAULT_API_URL 
   };
 } 
