@@ -45,22 +45,8 @@ export async function playJapaneseTTS(text: string): Promise<void> {
   try {
     console.log("正在生成语音...");
     
-    // 使用新的speech API端点
-    const response = await fetch('/api/speech', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ text }),
-    });
-    
-    if (!response.ok) {
-      const errorData = await response.json();
-      console.error("TTS API详细错误:", errorData);
-      throw new Error(errorData.error || `服务器错误: ${response.status}`);
-    }
-    
-    const { audioData } = await response.json();
+    // 客户端直接调用语音API（避免服务端代理问题）
+    const audioData = await generateSpeechIncognito(text);
     
     if (audioData) {
       // 创建Audio元素并播放
@@ -75,6 +61,153 @@ export async function playJapaneseTTS(text: string): Promise<void> {
     // 如果TTS API失败，回退到浏览器内置TTS（仅作为后备）
     console.log("使用浏览器内置TTS作为后备...");
     speakJapanese(text);
+  }
+}
+
+/**
+ * 模拟Chrome无痕模式，直接调用语音生成API
+ * 基于Python实现但优化为浏览器环境
+ */
+async function generateSpeechIncognito(
+  text: string, 
+  locale: string = "ja-JP", 
+  voice: string = "ja-JP-NanamiNeural", 
+  style: string = "default"
+): Promise<string | null> {
+  // 定义无痕模式请求头
+  const incognitoHeaders = {
+    'Accept': '*/*',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Cache-Control': 'no-cache',
+    'DNT': '1',
+    'Origin': 'https://speechactors.com',
+    'Pragma': 'no-cache',
+    'Referer': 'https://speechactors.com/',
+    'Sec-Fetch-Dest': 'empty',
+    'Sec-Fetch-Mode': 'cors',
+    'Sec-Fetch-Site': 'same-origin',
+    'X-Requested-With': 'XMLHttpRequest'
+  };
+
+  // 第一步：访问主页获取必要的cookies
+  console.log("访问主页获取cookies...");
+  
+  // 定义访问主页的请求头
+  const mainPageHeaders = {
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+    'Accept-Language': 'en-US,en;q=0.9',
+    'Cache-Control': 'no-cache',
+    'DNT': '1',
+    'Pragma': 'no-cache',
+    'Sec-Fetch-Dest': 'document',
+    'Sec-Fetch-Mode': 'navigate',
+    'Sec-Fetch-Site': 'none',
+    'Sec-Fetch-User': '?1',
+    'Upgrade-Insecure-Requests': '1'
+  };
+
+  try {
+    // 使用fetch API访问主页
+    const mainPageResponse = await fetch('https://speechactors.com/', {
+      method: 'GET',
+      headers: mainPageHeaders,
+      credentials: 'include' // 重要：保存cookies
+    });
+
+    if (!mainPageResponse.ok) {
+      console.error(`访问主页失败: ${mainPageResponse.status}`);
+      return null;
+    }
+
+    console.log("成功访问主页");
+
+    // 获取CSRF token（通过document cookie或页面内容）
+    let csrfToken = '';
+    
+    // 通过document.cookie获取CSRF token
+    const cookies = document.cookie;
+    const csrfMatch = cookies.match(/csrf_cookie_name=([^;]+)/);
+    if (csrfMatch && csrfMatch[1]) {
+      csrfToken = csrfMatch[1];
+      console.log("从cookies中获取CSRF token成功");
+    } else {
+      // 如果cookie中没有，尝试从页面内容提取
+      const pageContent = await mainPageResponse.text();
+      const metaMatch = pageContent.match(/<meta name="csrf-token" content="([^"]+)"/);
+      if (metaMatch && metaMatch[1]) {
+        csrfToken = metaMatch[1];
+        console.log("从页面内容获取CSRF token成功");
+      }
+    }
+
+    if (!csrfToken) {
+      console.error("未能获取CSRF token");
+      return null;
+    }
+
+    // 第二步：准备FormData（模拟Python requests的files参数）
+    const formData = new FormData();
+    formData.append('locale', locale);
+    formData.append('text', text);
+    formData.append('voice', voice);
+    formData.append('style', style);
+    if (csrfToken) {
+      formData.append('csrf_token', csrfToken);
+    }
+
+    // 发起API请求
+    console.log("发送TTS API请求...");
+    const apiResponse = await fetch('https://speechactors.com/open-tool/generate', {
+      method: 'POST',
+      headers: {
+        ...incognitoHeaders,
+        'X-CSRF-TOKEN': csrfToken
+      },
+      credentials: 'include', // 重要：包含cookies
+      body: formData
+    });
+
+    console.log(`API响应状态: ${apiResponse.status}`);
+
+    if (!apiResponse.ok) {
+      console.error(`API请求失败: ${apiResponse.status}`);
+      return null;
+    }
+
+    // 处理响应
+    const contentType = apiResponse.headers.get('content-type') || '';
+    
+    if (contentType.includes('json')) {
+      try {
+        const result = await apiResponse.json();
+        console.log(`JSON响应状态: ${result.status}`);
+        
+        if (result.status === 'success') {
+          const audioBase64 = result.stream;
+          if (audioBase64) {
+            console.log(`成功获取音频数据`);
+            return audioBase64;
+          }
+        } else {
+          console.error(`API错误: ${JSON.stringify(result)}`);
+        }
+      } catch (e) {
+        console.error('JSON解析失败');
+      }
+    } else {
+      // 检查是否直接返回音频数据
+      const responseData = await apiResponse.text();
+      if (responseData.length > 1000) { // 音频文件通常比较大
+        console.log(`可能收到直接音频数据: ${responseData.length} bytes`);
+        return responseData;
+      }
+      console.error(`收到非预期的响应`);
+    }
+
+    return null;
+  } catch (error) {
+    console.error('语音生成请求失败:', error);
+    return null;
   }
 }
 

@@ -6,6 +6,15 @@ import AnalysisResult from './components/AnalysisResult';
 import TranslationSection from './components/TranslationSection';
 import SettingsModal from './components/SettingsModal';
 import { analyzeSentence, TokenData, DEFAULT_API_URL, streamAnalyzeSentence } from './services/api';
+import TextAnalyzer from './components/TextAnalyzer';
+import { Suspense } from 'react';
+import dynamic from 'next/dynamic';
+
+// 动态导入以确保客户端组件正确加载
+const TTSTesterClient = dynamic(
+  () => import('./components/TTSTester'),
+  { ssr: false }
+);
 
 export default function Home() {
   const [currentSentence, setCurrentSentence] = useState('');
@@ -222,6 +231,19 @@ export default function Home() {
         </header>
 
         <main>
+          <div className="mb-4 text-center">
+            <a 
+              href="/tts-test" 
+              className="text-blue-600 hover:underline font-medium"
+            >
+              语音合成测试页面 (客户端直接调用)
+            </a>
+          </div>
+          
+          <Suspense fallback={<div>加载中...</div>}>
+            <TextAnalyzer />
+          </Suspense>
+
           <InputSection 
             onAnalyze={handleAnalyze}
             userApiKey={userApiKey}
