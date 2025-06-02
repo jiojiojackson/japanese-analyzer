@@ -147,7 +147,7 @@ export async function POST(req: Request) {
     let result;
     try {
       result = await apiResponse.json();
-    } catch (error) {
+    } catch (_error) {
       const responseText = await apiResponse.text();
       console.error('Failed to parse JSON response');
       console.error(`First 200 chars: ${responseText.substring(0, 200)}`);
