@@ -147,9 +147,10 @@ export async function POST(req: Request) {
     let result;
     try {
       result = await apiResponse.json();
-    } catch (_error) {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (error) {
       const responseText = await apiResponse.text();
-      console.error('Failed to parse JSON response');
+      console.error('Failed to parse JSON response:', error);
       console.error(`First 200 chars: ${responseText.substring(0, 200)}`);
       
       return Response.json(
