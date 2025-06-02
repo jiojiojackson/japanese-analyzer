@@ -172,10 +172,10 @@ export async function POST(req: Request) {
         { status: 502 }
       );
     }
-  } catch (error: unknown) {
-    console.error('Unexpected error:', error);
+  } catch (_error: unknown) {
+    console.error('Unexpected error:', _error);
     return Response.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
+      { error: _error instanceof Error ? _error.message : 'Unknown error' },
       { status: 500 }
     );
   }

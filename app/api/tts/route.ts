@@ -38,10 +38,7 @@ export async function POST(request: Request) {
     const cookies = mainResponse.headers.get('set-cookie');
     console.log(`TTS API: Got cookies: ${cookies ? 'yes' : 'no'}`);
 
-    // Step 2: Create a unique boundary for multipart/form-data
-    const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2);
-
-    // Prepare form data with proper boundary
+    // Prepare form data
     const formBody = new FormData();
     formBody.append('locale', 'ja-JP');
     formBody.append('text', text);
