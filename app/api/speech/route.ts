@@ -15,7 +15,7 @@ export async function POST(req: Request) {
     
     console.log(`Speech API: Processing text: ${text.substring(0, 30)}${text.length > 30 ? '...' : ''}`);
 
-    // Define headers that mimic Chrome browser
+    // Define headers that mimic Chrome browser more accurately
     const browserHeaders = {
       'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
       'Accept-Language': 'en-US,en;q=0.9,ja;q=0.8',
@@ -24,11 +24,17 @@ export async function POST(req: Request) {
       'Sec-Ch-Ua': '"Google Chrome";v="123", "Not:A-Brand";v="8", "Chromium";v="123"',
       'Sec-Ch-Ua-Mobile': '?0',
       'Sec-Ch-Ua-Platform': '"Windows"',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
       'Upgrade-Insecure-Requests': '1',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Pragma': 'no-cache'
     };
 
     // Step 1: Visit the main page to get cookies
+    console.log('Speech API: Fetching main page to get cookies...');
     const mainPageResponse = await fetch('https://speechactors.com/', {
       method: 'GET',
       headers: browserHeaders
@@ -60,6 +66,16 @@ export async function POST(req: Request) {
       }
     }
 
+    // Try to extract CSRF token from page content if not found in cookies
+    if (!csrfToken) {
+      const pageContent = await mainPageResponse.text();
+      const metaMatch = pageContent.match(/<meta name="csrf-token" content="([^"]+)"/);
+      if (metaMatch && metaMatch[1]) {
+        csrfToken = metaMatch[1];
+        console.log('CSRF token extracted from page content');
+      }
+    }
+
     // Step 2: Create form data for the API request
     const formData = new URLSearchParams();
     formData.append('locale', 'ja-JP');
@@ -74,15 +90,21 @@ export async function POST(req: Request) {
 
     // API request headers
     const apiHeaders: HeadersInit = {
-      ...browserHeaders,
+      'User-Agent': browserHeaders['User-Agent'],
       'Accept': '*/*',
+      'Accept-Language': browserHeaders['Accept-Language'],
       'Content-Type': 'application/x-www-form-urlencoded',
       'Origin': 'https://speechactors.com',
       'Referer': 'https://speechactors.com/',
+      'Sec-Ch-Ua': browserHeaders['Sec-Ch-Ua'],
+      'Sec-Ch-Ua-Mobile': browserHeaders['Sec-Ch-Ua-Mobile'],
+      'Sec-Ch-Ua-Platform': browserHeaders['Sec-Ch-Ua-Platform'],
       'Sec-Fetch-Dest': 'empty',
       'Sec-Fetch-Mode': 'cors',
       'Sec-Fetch-Site': 'same-origin',
-      'X-Requested-With': 'XMLHttpRequest'
+      'X-Requested-With': 'XMLHttpRequest',
+      'Pragma': 'no-cache',
+      'Cache-Control': 'no-cache'
     };
 
     // Add cookies if available
@@ -116,6 +138,13 @@ export async function POST(req: Request) {
       console.error(`API request failed with status ${apiResponse.status}`);
       console.error(`Response is HTML: ${isHtml}`);
       console.error(`First 200 chars: ${errorText.substring(0, 200)}`);
+      
+      if (apiResponse.status === 403) {
+        console.error('Received 403 Forbidden - This could be due to:');
+        console.error('1. Missing or invalid CSRF token');
+        console.error('2. IP blocking or rate limiting');
+        console.error('3. Bot detection mechanisms');
+      }
       
       return Response.json(
         { 
