@@ -79,34 +79,70 @@ export async function POST(req: Request) {
       );
     }
     console.log('Cookies received successfully');
+    
+    // Parse all the cookies into an object
+    const cookiesInfo: Record<string, string> = {};
+    const cookiePairs = cookies.split(';').map(pair => pair.trim());
+    for (const pair of cookiePairs) {
+      const [name, ...rest] = pair.split('=');
+      const value = rest.join('=');
+      if (name && value) {
+        // Extract just the cookie name without attributes
+        const cleanName = name.split(',').pop()?.trim() || name;
+        cookiesInfo[cleanName] = value;
+      }
+    }
 
-    // Extract CSRF token from cookies
-    const csrfMatch = cookies.match(/csrf_cookie_name=([^;]+)/);
-    if (!csrfMatch || !csrfMatch[1]) {
+    // Get the CSRF token from cookies
+    const csrfToken = cookiesInfo['csrf_cookie_name'];
+    if (!csrfToken) {
       console.error('No CSRF token found in cookies');
       return Response.json(
         { error: 'No CSRF token found in cookies' },
         { status: 502 }
       );
     }
-    const csrfToken = csrfMatch[1];
     console.log('CSRF token extracted successfully');
 
-    // Step 2: Prepare form data as multipart/form-data
-    const formData = new FormData();
-    formData.append('locale', 'ja-JP');
-    formData.append('text', text);
-    formData.append('voice', 'ja-JP-NanamiNeural');
-    formData.append('style', 'default');
+    // Step 2: Create a multipart form data boundary, similar to Python's files parameter
+    // This is critical as the Python implementation uses files parameter which creates a specific format
+    const boundary = '----WebKitFormBoundary' + Math.random().toString(16).substr(2);
+    
+    // Prepare form data parts manually to match Python requests.post(files=files) format
+    let formDataParts = '';
+    
+    // Add form fields in the exact same format as Python's requests
+    formDataParts += `--${boundary}\r\n`;
+    formDataParts += 'Content-Disposition: form-data; name="locale"\r\n\r\n';
+    formDataParts += 'ja-JP\r\n';
+    
+    formDataParts += `--${boundary}\r\n`;
+    formDataParts += 'Content-Disposition: form-data; name="text"\r\n\r\n';
+    formDataParts += `${text}\r\n`;
+    
+    formDataParts += `--${boundary}\r\n`;
+    formDataParts += 'Content-Disposition: form-data; name="voice"\r\n\r\n';
+    formDataParts += 'ja-JP-NanamiNeural\r\n';
+    
+    formDataParts += `--${boundary}\r\n`;
+    formDataParts += 'Content-Disposition: form-data; name="style"\r\n\r\n';
+    formDataParts += 'default\r\n';
+    
     if (csrfToken) {
-      formData.append('csrf_token', csrfToken);
+      formDataParts += `--${boundary}\r\n`;
+      formDataParts += 'Content-Disposition: form-data; name="csrf_token"\r\n\r\n';
+      formDataParts += `${csrfToken}\r\n`;
     }
+    
+    // Close the form data
+    formDataParts += `--${boundary}--\r\n`;
 
     // API request headers
     const apiHeaders: HeadersInit = {
       ...browserHeaders,
       'Cookie': cookies,
-      'X-CSRF-TOKEN': csrfToken
+      'X-CSRF-TOKEN': csrfToken,
+      'Content-Type': `multipart/form-data; boundary=${boundary}`
     };
 
     console.log('Sending TTS API request...');
@@ -115,7 +151,7 @@ export async function POST(req: Request) {
     const apiResponse = await fetch('https://speechactors.com/open-tool/generate', {
       method: 'POST',
       headers: apiHeaders,
-      body: formData
+      body: formDataParts
     });
 
     // Get content type of response
