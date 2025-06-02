@@ -45,8 +45,8 @@ export async function playJapaneseTTS(text: string): Promise<void> {
   try {
     console.log("正在生成语音...");
     
-    // 使用服务端代理API避免CORS问题
-    const response = await fetch('/api/tts', {
+    // 使用新的speech API端点
+    const response = await fetch('/api/speech', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -56,6 +56,7 @@ export async function playJapaneseTTS(text: string): Promise<void> {
     
     if (!response.ok) {
       const errorData = await response.json();
+      console.error("TTS API详细错误:", errorData);
       throw new Error(errorData.error || `服务器错误: ${response.status}`);
     }
     
