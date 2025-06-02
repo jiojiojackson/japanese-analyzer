@@ -143,7 +143,7 @@ export async function POST(req: Request) {
         console.log('Successfully generated audio');
         return Response.json({ audioData: result.stream });
       }
-    } catch (e) {
+    } catch {
       // If response is not JSON, check if it's direct audio data
       if (responseData.length > 1000) { // Audio files are typically large
         console.log('Received direct audio data');
