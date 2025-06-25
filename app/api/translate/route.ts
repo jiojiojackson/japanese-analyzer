@@ -35,7 +35,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 构建翻译请求
-    const translationPrompt = `请将以下日语句子翻译成简体中文：\n\n"${text}"\n\n请仅返回翻译后的中文文本。`;
+    const translationPrompt = `请将以下日语句子翻译成简体中文，并对其中涉及的主要语法点和关键词汇进行详细解释。\n\n"${text}"\n\n输出要求：\n1. 使用 Markdown 格式。\n2. 先给出翻译内容，放在一个段落中。\n3. 然后使用二级标题 “## 语法解析” 罗列本句中出现的重要语法点，每一点使用无序列表说明。\n4. 再使用二级标题 “## 词汇表” 以 Markdown 表格形式列出需要说明的词汇，表头包含“单词 | 词性/角色 | 释义”。\n5. 仅返回 Markdown 内容，不要包含多余说明。`
     const payload = {
       model: model,
       reasoning_effort: "none",

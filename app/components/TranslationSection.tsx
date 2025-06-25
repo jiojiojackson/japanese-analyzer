@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import { translateText, streamTranslateText } from '../services/api';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 
 interface TranslationSectionProps {
   japaneseText: string;
@@ -85,7 +87,7 @@ export default function TranslationSection({
           onClick={handleTranslate}
           disabled={isLoading}
         >
-          {!isLoading && <span className="button-text">翻译整句</span>}
+          {!isLoading && <span className="button-text">翻译并解释（Markdown）</span>}
           <div className="loading-spinner" style={{ display: isLoading ? 'inline-block' : 'none' }}></div>
           {isLoading && <span className="button-text">翻译中...</span>}
         </button>
@@ -94,7 +96,7 @@ export default function TranslationSection({
       {(isLoading || translation) && (
         <div id="fullTranslationCard" className="premium-card mt-4">
           <div className="flex justify-between items-center mb-3">
-            <h2 className="text-2xl font-semibold text-gray-700" style={{ marginBottom: isVisible ? '0.75rem' : '0' }}>全文翻译 (中)</h2>
+            <h2 className="text-2xl font-semibold text-gray-700" style={{ marginBottom: isVisible ? '0.75rem' : '0' }}>翻译与语法词汇解释</h2>
             <button 
               id="toggleFullTranslationButton" 
               className="premium-button premium-button-outlined text-sm px-3 py-1"
@@ -112,7 +114,7 @@ export default function TranslationSection({
                   <span className="ml-2 text-gray-500">正在翻译，请稍候...</span>
                 </div>
               ) : (
-                translation
+                <ReactMarkdown remarkPlugins={[remarkGfm]} className="prose max-w-none">{translation}</ReactMarkdown>
               )}
             </div>
           )}
