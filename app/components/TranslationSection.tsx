@@ -1,11 +1,9 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 
 import { useState, useEffect } from 'react';
 import { translateText, streamTranslateText } from '../services/api';
-import ReactMarkdown from 'react-markdown';
-import * as gfmMod from 'remark-gfm';
-const remarkGfm = (gfmMod as any).default ?? (gfmMod as any);
+import { marked } from 'marked';
 
 interface TranslationSectionProps {
   japaneseText: string;
@@ -116,10 +114,7 @@ export default function TranslationSection({
                   <span className="ml-2 text-gray-500">正在翻译，请稍候...</span>
                 </div>
               ) : (
-                <>
-                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
-                    <ReactMarkdown remarkPlugins={[remarkGfm as any]} className="prose max-w-none">{translation}</ReactMarkdown>
-                  </>
+                <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: marked.parse(translation) }} />
               )}
             </div>
           )}
