@@ -4,7 +4,8 @@
 import { useState, useEffect } from 'react';
 import { translateText, streamTranslateText } from '../services/api';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import * as gfmMod from 'remark-gfm';
+const remarkGfm = (gfmMod as any).default ?? (gfmMod as any);
 
 interface TranslationSectionProps {
   japaneseText: string;
