@@ -1,9 +1,9 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { useState, useEffect } from 'react';
 import { translateText, streamTranslateText } from '../services/api';
 import ReactMarkdown from 'react-markdown';
-// @ts-expect-error type mismatch between vfile versions
 import remarkGfm from 'remark-gfm';
 
 interface TranslationSectionProps {
@@ -115,7 +115,10 @@ export default function TranslationSection({
                   <span className="ml-2 text-gray-500">正在翻译，请稍候...</span>
                 </div>
               ) : (
-                <ReactMarkdown remarkPlugins={[remarkGfm as any]} className="prose max-w-none">{translation}</ReactMarkdown>
+                <>
+                    {/* eslint-disable-next-line @typescript-eslint/no-explicit-any */}
+                    <ReactMarkdown remarkPlugins={[remarkGfm as any]} className="prose max-w-none">{translation}</ReactMarkdown>
+                  </>
               )}
             </div>
           )}
