@@ -26,6 +26,7 @@
 立即在浏览器中试用 👉 **[Demo](https://japanese-analyzer-demo.vercel.app/)**
 国内访问地址 👉 **[国内访问](https://nihongodemo.howen.ink/)**
 > 注意：当前 Demo 网站使用的是免费的 API Key，可能存在不稳定情况。请勿滥用，如有大量使用需求，建议根据下方教程申请您自己的 API Key（完全免费）。
+> 测试网站的免费api最近老被刷爆了，还是建议申请自己的apikey填在测试网站使用即可
 
 ## 📺 演示视频
 
