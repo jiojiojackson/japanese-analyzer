@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { streamExplanation } from '../services/api';
 
 interface ExplanationSectionProps {
@@ -103,14 +105,16 @@ export default function ExplanationSection({
           </div>
           
           {isVisible && (
-            <div id="explanationOutput" className="text-gray-800 p-3 bg-gray-50 rounded-lg min-h-[50px] whitespace-pre-wrap">
+            <div id="explanationOutput" className="prose dark:prose-invert max-w-none text-gray-800 p-3 bg-gray-50 rounded-lg min-h-[50px]">
               {isLoading && !explanation ? (
                 <div className="flex items-center justify-center py-4">
                   <div className="loading-spinner"></div>
                   <span className="ml-2 text-gray-500">正在解释，请稍候...</span>
                 </div>
               ) : (
-                explanation
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {explanation}
+                </ReactMarkdown>
               )}
             </div>
           )}
