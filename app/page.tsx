@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import InputSection from './components/InputSection';
 import AnalysisResult from './components/AnalysisResult';
-import TranslationSection from './components/TranslationSection';
+import ExplanationSection from './components/ExplanationSection';
 import SettingsModal from './components/SettingsModal';
 import TopToolbar from './components/TopToolbar';
 import LoginModal from './components/LoginModal';
@@ -19,7 +19,7 @@ export default function Home() {
   const [useStream, setUseStream] = useState<boolean>(true);
   const [streamContent, setStreamContent] = useState('');
   const [isJsonParseError, setIsJsonParseError] = useState(false);
-  const [translationTrigger, setTranslationTrigger] = useState(0);
+  const [explanationTrigger, setExplanationTrigger] = useState(0);
   const [showFurigana, setShowFurigana] = useState(true);
   
   // API设置相关状态
@@ -241,7 +241,7 @@ export default function Home() {
     setIsAnalyzing(true);
     setAnalysisError('');
     setCurrentSentence(text);
-    setTranslationTrigger(Date.now());
+    setExplanationTrigger(Date.now());
     setStreamContent('');
     setAnalyzedTokens([]);
     setIsJsonParseError(false);
@@ -397,12 +397,12 @@ export default function Home() {
             )}
 
             {currentSentence && (
-              <TranslationSection
+              <ExplanationSection
                 japaneseText={currentSentence}
                 userApiKey={userApiKey}
                 userApiUrl={userApiUrl}
                 useStream={useStream}
-                trigger={translationTrigger}
+                trigger={explanationTrigger}
               />
             )}
           </main>

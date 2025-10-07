@@ -260,6 +260,140 @@ export async function streamAnalyzeSentence(
   }
 }
 
+// 流式解释文本
+export async function streamExplanation(
+  japaneseText: string,
+  onChunk: (chunk: string, isDone: boolean) => void,
+  onError: (error: Error) => void,
+  userApiKey?: string,
+  userApiUrl?: string
+): Promise<void> {
+  try {
+    const apiUrl = getApiEndpoint('/explanation');
+    const headers = getHeaders(userApiKey);
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        text: japaneseText,
+        model: MODEL_NAME,
+        apiUrl: userApiUrl !== DEFAULT_API_URL ? userApiUrl : undefined,
+        stream: true
+      })
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('API Error (Stream Explanation):', errorData);
+      onError(new Error(`流式解释失败：${errorData.error?.message || response.statusText || '未知错误'}`));
+      return;
+    }
+
+    // 处理流式响应
+    const reader = response.body?.getReader();
+    if (!reader) {
+      onError(new Error('无法创建流式读取器'));
+      return;
+    }
+
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let rawContent = '';
+    let done = false;
+
+    // 添加防抖，减少UI更新频率，提高性能
+    let updateTimeout: NodeJS.Timeout | null = null;
+    const updateDebounceTime = 16; // 16ms - 1帧更新，更流畅
+
+    const debouncedUpdate = (content: string, isComplete: boolean) => {
+      if (updateTimeout) {
+        clearTimeout(updateTimeout);
+      }
+
+      if (isComplete) {
+        // 最终结果不需要防抖
+        onChunk(content, true);
+        return;
+      }
+
+      updateTimeout = setTimeout(() => {
+        onChunk(content, false);
+      }, updateDebounceTime);
+    };
+
+    while (!done) {
+      const { value, done: doneReading } = await reader.read();
+      done = doneReading;
+
+      if (value) {
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+
+        // 处理buffer中所有完整的行
+        const lines = buffer.split('\n');
+        // 最后一行可能不完整，保留到下一次处理
+        buffer = lines.pop() || '';
+
+        let hasNewContent = false;
+
+        for (const line of lines) {
+          if (line.trim() === '') continue;
+
+          if (line.startsWith('data: ')) {
+            const data = line.substring(6);
+            if (data === '[DONE]') {
+              // 最终结果
+              onChunk(rawContent, true);
+              return;
+            }
+
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+                const content = parsed.choices[0].delta.content;
+                rawContent += content;
+                hasNewContent = true;
+              }
+            } catch (e) {
+              console.warn('Failed to parse streaming JSON chunk:', e, data);
+            }
+          }
+        }
+
+        // 只有在内容有更新时才触发更新
+        if (hasNewContent) {
+          debouncedUpdate(rawContent, false);
+        }
+      }
+    }
+
+    // 处理最后可能剩余的数据
+    if (buffer.trim() !== '') {
+      if (buffer.startsWith('data: ')) {
+        const data = buffer.substring(6);
+        if (data !== '[DONE]') {
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.choices && parsed.choices[0] && parsed.choices[0].delta && parsed.choices[0].delta.content) {
+              const content = parsed.choices[0].delta.content;
+              rawContent += content;
+            }
+          } catch (e) {
+            console.warn('Failed to parse final streaming JSON chunk:', e, data);
+          }
+        }
+      }
+    }
+
+    // 最终结果
+    onChunk(rawContent, true);
+  } catch (error) {
+    console.error('Error in stream explaining text:', error);
+    onError(error instanceof Error ? error : new Error('未知错误'));
+  }
+}
+
 // 流式翻译文本
 export async function streamTranslateText(
   japaneseText: string,
