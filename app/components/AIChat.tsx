@@ -90,11 +90,13 @@ export default function AIChat({ userApiKey, currentSentence }: AIChatProps) {
     setMessages(prev => [...prev, tempAssistantMessage]);
 
     try {
-      // 准备API消息格式
-      const apiMessages: APIMessage[] = messages.map(msg => ({
-        role: msg.role,
-        content: msg.content
-      }));
+      // 准备API消息格式 - 不包括刚添加到 UI 的用户消息，因为还没有发送到API
+      const apiMessages: APIMessage[] = messages
+        .filter(msg => msg.id !== userMessage.id) // 排除刚添加的用户消息
+        .map(msg => ({
+          role: msg.role,
+          content: msg.content
+        }));
       
       // 如果有当前分析的句子，并且这是新的句子上下文，添加句子上下文
       if (currentSentence) {
@@ -110,7 +112,7 @@ export default function AIChat({ userApiKey, currentSentence }: AIChatProps) {
             role: 'user',
             content: `请注意：我正在分析这个日语句子：「${currentSentence}」。请在后续回答中结合这个句子的语境来解释相关的日语问题。`
           };
-          apiMessages.splice(-1, 0, contextMessage);
+          apiMessages.push(contextMessage);
         }
       }
       

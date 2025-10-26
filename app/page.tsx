@@ -67,7 +67,7 @@ export default function Home() {
     const storedApiKey = localStorage.getItem('userApiKey') || '';
     const storedApiUrl = localStorage.getItem('userApiUrl') || DEFAULT_API_URL;
     const storedUseStream = localStorage.getItem('useStream');
-    const storedTtsProvider = localStorage.getItem('ttsProvider') as 'edge' | 'gemini' || 'edge';
+    const storedTtsProvider = (localStorage.getItem('ttsProvider') || 'edge') as 'edge' | 'gemini';
     
     setUserApiKey(storedApiKey);
     setUserApiUrl(storedApiUrl);

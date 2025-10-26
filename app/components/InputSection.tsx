@@ -83,7 +83,7 @@ export default function InputSection({
 
   // 从本地存储加载TTS设置
   useEffect(() => {
-    const storedGender = localStorage.getItem('ttsGender') as 'male' | 'female' || 'female';
+    const storedGender = (localStorage.getItem('ttsGender') || 'female') as 'male' | 'female';
     const storedRate = parseInt(localStorage.getItem('ttsRate') || '0');
     const storedVoice = localStorage.getItem('ttsVoice') || 'Kore';
     const storedStyle = localStorage.getItem('ttsStyle') || '';

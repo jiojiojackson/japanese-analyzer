@@ -27,15 +27,22 @@ export default function AnalysisResult({
   const [wordDetail, setWordDetail] = useState<WordDetail | null>(null);
   
   // 防抖更新状态，避免频繁渲染
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debounceTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastUpdateTimeRef = useRef<number>(0);
+  const wordDetailRef = useRef<WordDetail | null>(null);
+  
+  // 同步 ref 和 state
+  useEffect(() => {
+    wordDetailRef.current = wordDetail;
+  }, [wordDetail]);
   
   const updateWordDetailThrottled = useCallback((newDetail: WordDetail) => {
     const now = Date.now();
     const timeSinceLastUpdate = now - lastUpdateTimeRef.current;
+    const currentWordDetail = wordDetailRef.current;
     
     // 立即更新关键字段或者距离上次更新超过1秒
-    if (!wordDetail || timeSinceLastUpdate > 1000 || newDetail.originalWord !== wordDetail.originalWord) {
+    if (!currentWordDetail || timeSinceLastUpdate > 1000 || newDetail.originalWord !== currentWordDetail.originalWord) {
       setWordDetail(newDetail);
       lastUpdateTimeRef.current = now;
       return;
@@ -50,7 +57,7 @@ export default function AnalysisResult({
       setWordDetail(newDetail);
       lastUpdateTimeRef.current = Date.now();
     }, 50); // 50ms防抖 - 更快响应
-  }, [wordDetail]);
+  }, []);
   
   // 清理防抖定时器
   useEffect(() => {
@@ -84,7 +91,7 @@ export default function AnalysisResult({
   const [isStreamLoading, setIsStreamLoading] = useState(false);
   const [streamError, setStreamError] = useState('');
 
-  // 检测设备是���为移动端
+  // 检测设备是否为移动端
   useEffect(() => {
     const checkIsMobile = () => {
       setIsMobile(window.innerWidth <= 768);

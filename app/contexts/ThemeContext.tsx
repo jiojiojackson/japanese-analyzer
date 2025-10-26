@@ -18,8 +18,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // 从本地存储加载主题设置
-    const savedTheme = localStorage.getItem('theme') as Theme;
-    if (savedTheme && ['light', 'dark', 'system'].includes(savedTheme)) {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light' || savedTheme === 'dark' || savedTheme === 'system') {
       setTheme(savedTheme);
     }
   }, []);
@@ -30,7 +30,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
         const isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
         setActualTheme(isDark ? 'dark' : 'light');
       } else {
-        setActualTheme(theme as 'light' | 'dark');
+        setActualTheme(theme);
       }
     };
 
