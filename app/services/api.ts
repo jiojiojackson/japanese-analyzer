@@ -169,7 +169,7 @@ export async function streamAnalyzeSentence(
     let done = false;
     
     // 添加防抖，减少UI更新频率，提高性能
-    let updateTimeout: NodeJS.Timeout | null = null;
+    let updateTimeout: ReturnType<typeof setTimeout> | null = null;
     const updateDebounceTime = 16; // 16ms - 1帧更新，更流畅
     
     const debouncedUpdate = (content: string, isComplete: boolean) => {
@@ -303,7 +303,7 @@ export async function streamTranslateText(
     let done = false;
     
     // 添加防抖，减少UI更新频率，提高性能
-    let updateTimeout: NodeJS.Timeout | null = null;
+    let updateTimeout: ReturnType<typeof setTimeout> | null = null;
     const updateDebounceTime = 16; // 16ms - 1帧更新，更流畅
     
     const debouncedUpdate = (content: string, isComplete: boolean) => {
@@ -504,7 +504,7 @@ export async function streamWordDetails(
     let done = false;
     
     // 添加防抖，减少UI更新频率
-    let updateTimeout: NodeJS.Timeout | null = null;
+    let updateTimeout: ReturnType<typeof setTimeout> | null = null;
     const updateDebounceTime = 30; // 30ms - 更快的响应
     
     const debouncedUpdate = (content: string, isComplete: boolean) => {
@@ -704,7 +704,7 @@ export async function streamExtractTextFromImage(
     let done = false;
     
     // 添加防抖，减少UI更新频率，提高性能
-    let updateTimeout: NodeJS.Timeout | null = null;
+    let updateTimeout: ReturnType<typeof setTimeout> | null = null;
     const updateDebounceTime = 16; // 16ms - 1帧更新，更流畅
     
     const debouncedUpdate = (content: string, isComplete: boolean) => {
@@ -868,7 +868,7 @@ export async function streamChat(
     let done = false;
     
     // 添加防抖，减少UI更新频率
-    let updateTimeout: NodeJS.Timeout | null = null;
+    let updateTimeout: ReturnType<typeof setTimeout> | null = null;
     const updateDebounceTime = 30; // 30ms - 更快的响应
     
     const debouncedUpdate = (content: string, isComplete: boolean) => {
