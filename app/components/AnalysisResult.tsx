@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { createPortal } from 'react-dom';
 import { containsKanji, getPosClass, posChineseMap, speakJapanese, generateFuriganaParts, getJapaneseTtsAudioUrl } from '../utils/helpers';
 import { getWordDetails, streamWordDetails, TokenData, WordDetail } from '../services/api';
 import { FaVolumeUp } from 'react-icons/fa';
@@ -493,6 +494,36 @@ export default function AnalysisResult({
     return null;
   }
 
+  // 移动端模态内容，后续通过 Portal 挂到 body，避免被页面内部元素覆盖
+  const mobileWordDetailModal = (
+    <div
+      id="wordDetailModal"
+      className="word-detail-modal"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleCloseWordDetail();
+      }}
+    >
+      <div className="word-detail-modal-content">
+        <button
+          className="modal-close-button"
+          title="关闭详情"
+          onClick={handleCloseWordDetail}
+        >
+          &times;
+        </button>
+
+        {isLoading ? (
+          <div className="flex items-center justify-center py-5">
+            <div className="loading-spinner"></div>
+            <span className="ml-2 text-gray-600">正在查询释义...</span>
+          </div>
+        ) : (
+          <WordDetailContent />
+        )}
+      </div>
+    </div>
+  );
+
   return (
     <div className="premium-card relative">
       <div className="flex justify-between items-center mb-4">
@@ -602,28 +633,9 @@ export default function AnalysisResult({
       
       {/* 移动端的模态窗口详情展示 */}
       {isMobile && isModalOpen && (
-        <div id="wordDetailModal" className="word-detail-modal" onClick={(e) => {
-          if (e.target === e.currentTarget) handleCloseWordDetail();
-        }}>
-          <div className="word-detail-modal-content">
-            <button 
-              className="modal-close-button" 
-              title="关闭详情"
-              onClick={handleCloseWordDetail}
-            >
-              &times;
-            </button>
-            
-            {isLoading ? (
-              <div className="flex items-center justify-center py-5">
-                <div className="loading-spinner"></div>
-                <span className="ml-2 text-gray-600">正在查询释义...</span>
-              </div>
-            ) : (
-              <WordDetailContent />
-            )}
-          </div>
-        </div>
+        typeof document !== 'undefined'
+          ? createPortal(mobileWordDetailModal, document.body)
+          : mobileWordDetailModal
       )}
       
       <p className="text-sm text-gray-500 italic mt-3">点击词汇查看详细释义。悬停词汇可查看词性。</p>
