@@ -837,7 +837,7 @@ html.safari #japaneseInput {
   display: flex;
   justify-content: center;
   align-items: center;
-  z-index: 1000;
+  z-index: 10000; /* 确保高于页面按钮和悬浮组件 */
   padding: 15px;
   animation: fadeInModal 0.2s ease;
   will-change: opacity;
